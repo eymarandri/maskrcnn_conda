@@ -122,3 +122,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+assets/
+balloon_dataset/
+*.h5
+images/
+results/
+logs/
+samples/
+.idea/
