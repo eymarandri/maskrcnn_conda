@@ -55,13 +55,14 @@ COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
-
+CLASS_NAME="Bin" #or graybox
 # Results directory
 # Save submission files here
 RESULTS_DIR = os.path.join(ROOT_DIR, "results/bindetector/")
 
 # The dataset doesn't have a standard train/val split, so I picked
 # a variety of images to surve as a validation set.
+"""
 VAL_IMAGE_IDS = [
     "rgb_0_inst_0_class_objects_seg_0_augm_0",
     "rgb_0_inst_0_class_objects_seg_0_orig",
@@ -99,22 +100,56 @@ VAL_IMAGE_IDS = [
     #"5fda43e8-6370-4fff-a465-65b8c7fb4432_inst_16_class_graybox_seg_1_orig",
 
 ]
+"""
+VAL_IMAGE_IDS = [
+    "5c9404cb-6e81-4e24-8553-24deecc3c793_inst_0_class_Bin_seg_0_orig",
+    "59045505-ad7d-4537-98f2-552b5682dcec_inst_1_class_Bin_seg_1_orig",
+    "5734f100-d6df-4780-b0ab-d82a94b765e7_inst_0_class_Bin_seg_0_augm_0",
+    "4c9ebbc3-f484-4b56-98c7-fde00df79f3f_inst_0_class_Bin_seg_0_orig",
+    "418a56db-2c95-4af3-a2bd-5ba6885ba9ee_inst_0_class_Bin_seg_0_augm_0",
+    "2e518840-c5d9-4cd8-9501-174a9182bab0_inst_0_class_Bin_seg_1_augm_1",
+    "16bbb97e-5908-43f8-9af0-0f2c90b4a04a_inst_0_class_Bin_seg_0_augm_0",
+    "09d85c8e-706e-4078-916b-c894babb3228_inst_1_class_Bin_seg_0_augm_3",
+    "09d40f43-82d0-4543-a6bb-be880dd16cdb_inst_0_class_Bin_seg_0_orig",
+    "09c67a2a-a976-4f5f-904c-df45a8c0619b_inst_1_class_Bin_seg_1_orig",
+    "08b96752-e44a-46a1-8a1c-ea0212285b56_inst_1_class_Bin_seg_1_orig",
+    "07423e49-bc26-466e-b24d-e0df2b8c20f8_inst_0_class_Bin_seg_0_orig",
+    "071dc781-d691-47fe-99ce-a2f2b46984ac_inst_1_class_Bin_seg_0_augm_4",
+    "067269ea-5f34-4d53-904d-42f714b0391a_inst_2_class_Bin_seg_1_augm_2",
+    "06318e29-06b0-4592-8953-f689da510f29_inst_0_class_Bin_seg_0_orig",
+    "055d7e1f-1dd1-4a21-a2ae-0e0bb60632d0_inst_0_class_Bin_seg_1_orig",
+    "rgb_301_inst_0_class_graybox_seg_0_orig",
+    "rgb_301_inst_0_class_graybox_seg_0_augm_0",
+    "8e653167-e9a8-43d1-88ca-82a3505e2777_inst_3_class_graybox_seg_1_augm_0",
+    "rgb_2tupe_inst_0_class_graybox_seg_1_augm_0",
+    "rgb_10tupe_inst_0_class_graybox_seg_1_augm_0",
+    "fceaac94-fecf-482c-b127-c65cbf5d786c_inst_0_class_graybox_seg_0_orig",
+    "8e653167-e9a8-43d1-88ca-82a3505e2777_inst_0_class_graybox_seg_1_orig",
+    "86fa45d5-0a9f-4fe9-86b5-2d474188689a_inst_0_class_graybox_seg_0_augm_0",
+    "5b771c95-bc1b-401c-94e7-ed690cb8f63a_inst_1_class_graybox_seg_0_augm_0",
+    "5b771c95-bc1b-401c-94e7-ed690cb8f63a_inst_0_class_graybox_seg_1_augm_0",
+    "46884373-51f9-452c-b841-8b78ceb6ea69_inst_0_class_graybox_seg_1_augm_0",
+    "2342ffdc-711d-4851-92ac-447cebe9c30c_inst_0_class_graybox_seg_1_orig",
+    "11ad301e-af27-4f63-9f70-98e7cba8b017_inst_0_class_graybox_seg_0_augm_0",
+    "0bdb2ac4-156e-4b39-8fa3-9cd13893cfb3_inst_0_class_graybox_seg_0_orig",
+    #"5fda43e8-6370-4fff-a465-65b8c7fb4432_inst_16_class_graybox_seg_1_orig",
 
+]
 
 ############################################################
 #  Configurations
 ############################################################
 
-class NucleusConfig(Config):
-    """Configuration for training on the nucleus segmentation dataset."""
+class BinSegmentationConfig(Config):
+    """Configuration for training on the BinSegmentation segmentation dataset."""
     # Give the configuration a recognizable name
-    NAME = "graybox"
+    NAME = CLASS_NAME#"graybox"
     GPU_COUNT = 1
     # Adjust depending on your GPU memory
     IMAGES_PER_GPU = 1
 
     # Number of classes (including background)
-    NUM_CLASSES = 1 + 1  # Background + nucleus
+    NUM_CLASSES = 1 + 1  # Background + BinSegmentation
 
     # Number of training and validation steps per epoch
     STEPS_PER_EPOCH = 374
@@ -122,7 +157,7 @@ class NucleusConfig(Config):
     VALIDATION_STEPS = max(1, len(VAL_IMAGE_IDS) // IMAGES_PER_GPU)
 
     # Don't exclude based on confidence. Since we have two classes
-    # then 0.5 is the minimum anyway as it picks between nucleus and BG
+    # then 0.5 is the minimum anyway as it picks between BinSegmentation and BG
     DETECTION_MIN_CONFIDENCE = 0
 
     # Backbone network architecture
@@ -172,7 +207,7 @@ class NucleusConfig(Config):
     DETECTION_MAX_INSTANCES = 400
 
 
-class NucleusInferenceConfig(NucleusConfig):
+class BinSegmentationInferenceConfig(BinSegmentationConfig):
     # Set batch size to 1 to run one image at a time
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
@@ -187,9 +222,9 @@ class NucleusInferenceConfig(NucleusConfig):
 #  Dataset
 ############################################################
 
-class NucleusDataset(utils.Dataset):
+class BinSegmentationDataset(utils.Dataset):
 
-    def load_nucleus(self, dataset_dir, subset):
+    def load_BinSegmentation(self, dataset_dir, subset):
         """Load a subset of the nuclei dataset.
 
         dataset_dir: Root directory of the dataset
@@ -199,13 +234,32 @@ class NucleusDataset(utils.Dataset):
                 * val: validation images from VAL_IMAGE_IDS
         """
         # Add classes. We have one class.
-        # Naming the dataset nucleus, and the class nucleus
-        self.add_class("graybox", 1, "graybox")
+        # Naming the dataset BinSegmentation, and the class BinSegmentation
+        self.add_class(CLASS_NAME, 1, CLASS_NAME)
 
         # Which subset?
         # "val": use hard-coded list above
         # "train": use data from stage1_train minus the hard-coded list above
         # else: use the data from the specified sub-directory
+        # class_files = list(map(
+        #     (lambda x: os.path.basename(x)),
+        #     glob.glob('{}/*_class_{}*'.format(args.input_dir, "graybox"))))
+        #if subset=="trainval":
+        #    assert subset in ["train", "val"]
+        #    dataset_dir = os.path.join(dataset_dir, subset)
+        #else:
+
+        assert subset in ["train", "val"]
+        dataset_dir = os.path.join(dataset_dir, subset)
+        image_ids = next(os.walk(dataset_dir))[1]
+        if subset=="val":
+            print("VALIDATUIN size !!!!!!!!!!!!!!!!!!!!!!!: ")
+            print(len(image_ids))
+        if subset == "train":
+            print("train  LENGTH!!!!!!!!!!!!!!!!!: ")
+            print(len(image_ids))
+
+        """
         assert subset in ["train", "val", "stage1_train", "stage1_test", "stage2_test"]
         subset_dir = "stage1_train" if subset in ["train", "val"] else subset
         dataset_dir = os.path.join(dataset_dir, subset_dir)
@@ -216,11 +270,12 @@ class NucleusDataset(utils.Dataset):
             image_ids = next(os.walk(dataset_dir))[1]
             if subset == "train":
                 image_ids = list(set(image_ids) - set(VAL_IMAGE_IDS))
+        """
 
         # Add images
         for image_id in image_ids:
             self.add_image(
-                "graybox",
+                CLASS_NAME,
                 image_id=image_id,
                 path=os.path.join(dataset_dir, image_id, "images/{}.png".format(image_id)))
 
@@ -250,7 +305,7 @@ class NucleusDataset(utils.Dataset):
     def image_reference(self, image_id):
         """Return the path of the image."""
         info = self.image_info[image_id]
-        if info["source"] == "graybox":
+        if info["source"] == CLASS_NAME:
             return info["id"]
         else:
             super(self.__class__, self).image_reference(image_id)
@@ -263,13 +318,14 @@ class NucleusDataset(utils.Dataset):
 def train(model, dataset_dir, subset):
     """Train the model."""
     # Training dataset.
-    dataset_train = NucleusDataset()
-    dataset_train.load_nucleus(dataset_dir, subset)
+    dataset_train = BinSegmentationDataset()
+    #dataset_train.load_BinSegmentation(dataset_dir, subset)
+    dataset_train.load_BinSegmentation(dataset_dir, "train")
     dataset_train.prepare()
 
     # Validation dataset
-    dataset_val = NucleusDataset()
-    dataset_val.load_nucleus(dataset_dir, "val")
+    dataset_val = BinSegmentationDataset()
+    dataset_val.load_BinSegmentation(dataset_dir, "val")
     dataset_val.prepare()
 
     # Image augmentation
@@ -392,7 +448,7 @@ def detectsingleimg(model, image_path=None):
         # Color splash
         visualize.display_instances(
             image, r['rois'], r['masks'], r['class_ids'],
-            "graybox", r['scores'],
+            CLASS_NAME, r['scores'],
             show_bbox=True, show_mask=True,
             title="Predictions")
         file_name = "splashPredict_{:%Y%m%dT%H%M%S}".format(datetime.datetime.now())
@@ -415,8 +471,8 @@ def detect(model, dataset_dir, subset):
     os.makedirs(submit_dir)
 
     # Read dataset
-    dataset = NucleusDataset()
-    dataset.load_nucleus(dataset_dir, subset)
+    dataset = BinSegmentationDataset()
+    dataset.load_BinSegmentation(dataset_dir, subset)
     dataset.prepare()
     # Load over images
     submission = []
@@ -456,8 +512,8 @@ def detectsplash(model, dataset_dir, subset):
     os.makedirs(submit_dir)
 
     # Read dataset
-    dataset = NucleusDataset()
-    dataset.load_nucleus(dataset_dir, subset)
+    dataset = BinSegmentationDataset()
+    dataset.load_BinSegmentation(dataset_dir, subset)
     dataset.prepare()
     # Load over images
     submission = []
@@ -546,7 +602,7 @@ if __name__ == '__main__':
         description='Mask R-CNN for box segmentation')
     parser.add_argument("command",
                         metavar="<command>",
-                        help="'train' or 'detect' or 'splash'")
+                        help="'train' or 'singledetect' or 'detect' or 'splash'")
     parser.add_argument('--dataset', required=False,
                         metavar="/path/to/dataset/",
                         help='Root directory of the dataset')
@@ -563,7 +619,13 @@ if __name__ == '__main__':
     parser.add_argument('--image', required=False,
                         metavar="path or URL to image",
                         help='Image to apply the color splash effect on')
+    parser.add_argument('--classname', required=False,
+                        default=CLASS_NAME,
+                        metavar="Class names",
+                        help='Class names, str')
     args = parser.parse_args()
+    print("CLASS NAME!:",args.classname)
+    CLASS_NAME=args.classname
 
     # Validate arguments
     if args.command == "train":
@@ -584,9 +646,9 @@ if __name__ == '__main__':
 
     # Configurations
     if args.command == "train":
-        config = NucleusConfig()
+        config = BinSegmentationConfig()
     else:
-        config = NucleusInferenceConfig()
+        config = BinSegmentationInferenceConfig()
     config.display()
 
     # Create model
