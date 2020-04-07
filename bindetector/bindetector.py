@@ -6,19 +6,17 @@ Mask R-CNN
     # Train a new model starting from ImageNet weights
     python3 bindetector.py train --dataset=/path/to/dataset --subset=train --weights=coco
 
-    # Train a new model starting from specific weights file
-    python3 bindetector.py train --dataset=/path/to/dataset --subset=train --weights=/path/to/weights.h5
-
     # Resume training a model that you had trained earlier
     python3 bindetector.py train --dataset=/path/to/dataset --subset=train --weights=last
 
-    # Generate submission file
-    python3 bindetector.py detect --dataset=/path/to/dataset --subset=train --weights=<last or /path/to/weights.h5>
-
     Added:
+    python bindetector.py detect --dataset=/dataset_main_folder --subset=test (must be called test) --weights=any
     python3 bindetector.py singledetect --image=.... --weights=last
 
     python3 bindetector.py splash, crap
+
+    If stuck on memory
+    sudo fuser -v /dev/nvidia* and kill PIDS
 """
 
 # Set matplotlib backend
@@ -58,82 +56,10 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 CLASS_NAME="Bin" #or graybox
 # Results directory
 # Save submission files here
-RESULTS_DIR = os.path.join(ROOT_DIR, "results/bindetector/")
+RESULTS_DIR = os.path.join(ROOT_DIR, "results/bindetector_heads/")
 
-# The dataset doesn't have a standard train/val split, so I picked
-# a variety of images to surve as a validation set.
-"""
-VAL_IMAGE_IDS = [
-    "rgb_0_inst_0_class_objects_seg_0_augm_0",
-    "rgb_0_inst_0_class_objects_seg_0_orig",
-    "rgb_0_inst_0_class_objects_seg_1_augm_0",
-    "rgb_0_inst_0_class_objects_seg_1_orig",
-    "rgb_0_inst_1_class_objects_seg_0_augm_0",
-    "rgb_0_inst_1_class_objects_seg_0_orig",
-    "rgb_19_inst_0_class_objects_seg_0_augm_0",
-    "rgb_19_inst_0_class_objects_seg_0_orig",
-    "rgb_19_inst_0_class_objects_seg_1_augm_0",
-    "rgb_19_inst_0_class_objects_seg_1_orig",
-    "rgb_20_inst_0_class_objects_seg_0_augm_0",
-    "rgb_20_inst_0_class_objects_seg_0_orig",
-    "rgb_20_inst_0_class_objects_seg_1_augm_0",
-    "rgb_20_inst_0_class_objects_seg_1_orig",
-    "rgb_21_inst_0_class_objects_seg_0_augm_0",
-    "rgb_21_inst_0_class_objects_seg_0_orig",
-    "rgb_21_inst_0_class_objects_seg_1_augm_0",
-    "rgb_21_inst_0_class_objects_seg_1_orig",
-    "rgb_22_inst_0_class_objects_seg_0_augm_0",
-    "rgb_22_inst_0_class_objects_seg_0_orig",
-    "rgb_22_inst_0_class_objects_seg_1_augm_0",
-    "rgb_22_inst_0_class_objects_seg_1_orig",
-    "rgb_23_inst_0_class_objects_seg_0_augm_0",
-    "rgb_23_inst_0_class_objects_seg_0_orig",
-    "rgb_23_inst_0_class_objects_seg_1_augm_0",
-    "4ac1a641-1bea-4d57-a96e-99d018270a84_inst_13_class_graybox_seg_0_orig",
-    "8e653167-e9a8-43d1-88ca-82a3505e2777_inst_3_class_graybox_seg_1_orig",
-    "8e653167-e9a8-43d1-88ca-82a3505e2777_inst_4_class_graybox_seg_1_orig",
-    "11ad301e-af27-4f63-9f70-98e7cba8b017_inst_2_class_graybox_seg_0_orig",
-    "86fa45d5-0a9f-4fe9-86b5-2d474188689a_inst_0_class_graybox_seg_0_augm_0",
-    "2342ffdc-711d-4851-92ac-447cebe9c30c_inst_2_class_graybox_seg_1_augm_0",
-    "rgb_6tupe_inst_0_class_graybox_seg_0_orig",
-    "rgb_13tupe_inst_0_class_graybox_seg_1_orig",
-    #"5fda43e8-6370-4fff-a465-65b8c7fb4432_inst_16_class_graybox_seg_1_orig",
-
-]
-"""
 VAL_IMAGE_IDS = [
     "5c9404cb-6e81-4e24-8553-24deecc3c793_inst_0_class_Bin_seg_0_orig",
-    "59045505-ad7d-4537-98f2-552b5682dcec_inst_1_class_Bin_seg_1_orig",
-    "5734f100-d6df-4780-b0ab-d82a94b765e7_inst_0_class_Bin_seg_0_augm_0",
-    "4c9ebbc3-f484-4b56-98c7-fde00df79f3f_inst_0_class_Bin_seg_0_orig",
-    "418a56db-2c95-4af3-a2bd-5ba6885ba9ee_inst_0_class_Bin_seg_0_augm_0",
-    "2e518840-c5d9-4cd8-9501-174a9182bab0_inst_0_class_Bin_seg_1_augm_1",
-    "16bbb97e-5908-43f8-9af0-0f2c90b4a04a_inst_0_class_Bin_seg_0_augm_0",
-    "09d85c8e-706e-4078-916b-c894babb3228_inst_1_class_Bin_seg_0_augm_3",
-    "09d40f43-82d0-4543-a6bb-be880dd16cdb_inst_0_class_Bin_seg_0_orig",
-    "09c67a2a-a976-4f5f-904c-df45a8c0619b_inst_1_class_Bin_seg_1_orig",
-    "08b96752-e44a-46a1-8a1c-ea0212285b56_inst_1_class_Bin_seg_1_orig",
-    "07423e49-bc26-466e-b24d-e0df2b8c20f8_inst_0_class_Bin_seg_0_orig",
-    "071dc781-d691-47fe-99ce-a2f2b46984ac_inst_1_class_Bin_seg_0_augm_4",
-    "067269ea-5f34-4d53-904d-42f714b0391a_inst_2_class_Bin_seg_1_augm_2",
-    "06318e29-06b0-4592-8953-f689da510f29_inst_0_class_Bin_seg_0_orig",
-    "055d7e1f-1dd1-4a21-a2ae-0e0bb60632d0_inst_0_class_Bin_seg_1_orig",
-    "rgb_301_inst_0_class_graybox_seg_0_orig",
-    "rgb_301_inst_0_class_graybox_seg_0_augm_0",
-    "8e653167-e9a8-43d1-88ca-82a3505e2777_inst_3_class_graybox_seg_1_augm_0",
-    "rgb_2tupe_inst_0_class_graybox_seg_1_augm_0",
-    "rgb_10tupe_inst_0_class_graybox_seg_1_augm_0",
-    "fceaac94-fecf-482c-b127-c65cbf5d786c_inst_0_class_graybox_seg_0_orig",
-    "8e653167-e9a8-43d1-88ca-82a3505e2777_inst_0_class_graybox_seg_1_orig",
-    "86fa45d5-0a9f-4fe9-86b5-2d474188689a_inst_0_class_graybox_seg_0_augm_0",
-    "5b771c95-bc1b-401c-94e7-ed690cb8f63a_inst_1_class_graybox_seg_0_augm_0",
-    "5b771c95-bc1b-401c-94e7-ed690cb8f63a_inst_0_class_graybox_seg_1_augm_0",
-    "46884373-51f9-452c-b841-8b78ceb6ea69_inst_0_class_graybox_seg_1_augm_0",
-    "2342ffdc-711d-4851-92ac-447cebe9c30c_inst_0_class_graybox_seg_1_orig",
-    "11ad301e-af27-4f63-9f70-98e7cba8b017_inst_0_class_graybox_seg_0_augm_0",
-    "0bdb2ac4-156e-4b39-8fa3-9cd13893cfb3_inst_0_class_graybox_seg_0_orig",
-    #"5fda43e8-6370-4fff-a465-65b8c7fb4432_inst_16_class_graybox_seg_1_orig",
-
 ]
 
 ############################################################
@@ -152,9 +78,9 @@ class BinSegmentationConfig(Config):
     NUM_CLASSES = 1 + 1  # Background + BinSegmentation
 
     # Number of training and validation steps per epoch
-    STEPS_PER_EPOCH = 374
+    STEPS_PER_EPOCH = 1621
     #STEPS_PER_EPOCH = (657 - len(VAL_IMAGE_IDS)) // IMAGES_PER_GPU
-    VALIDATION_STEPS = max(1, len(VAL_IMAGE_IDS) // IMAGES_PER_GPU)
+    VALIDATION_STEPS = max(1, 367 // IMAGES_PER_GPU)
 
     # Don't exclude based on confidence. Since we have two classes
     # then 0.5 is the minimum anyway as it picks between BinSegmentation and BG
@@ -229,18 +155,12 @@ class BinSegmentationDataset(utils.Dataset):
 
         dataset_dir: Root directory of the dataset
         subset: Subset to load. Either the name of the sub-directory,
-                such as stage1_train, stage1_test, ...etc. or, one of:
-                * train: stage1_train excluding validation images
-                * val: validation images from VAL_IMAGE_IDS
         """
         # Add classes. We have one class.
         # Naming the dataset BinSegmentation, and the class BinSegmentation
         self.add_class(CLASS_NAME, 1, CLASS_NAME)
 
-        # Which subset?
-        # "val": use hard-coded list above
-        # "train": use data from stage1_train minus the hard-coded list above
-        # else: use the data from the specified sub-directory
+        # Which subset
         # class_files = list(map(
         #     (lambda x: os.path.basename(x)),
         #     glob.glob('{}/*_class_{}*'.format(args.input_dir, "graybox"))))
@@ -248,8 +168,8 @@ class BinSegmentationDataset(utils.Dataset):
         #    assert subset in ["train", "val"]
         #    dataset_dir = os.path.join(dataset_dir, subset)
         #else:
-
-        assert subset in ["train", "val"]
+        if subset!='test':
+            assert subset in ["train", "val"]
         dataset_dir = os.path.join(dataset_dir, subset)
         image_ids = next(os.walk(dataset_dir))[1]
         if subset=="val":
@@ -258,19 +178,6 @@ class BinSegmentationDataset(utils.Dataset):
         if subset == "train":
             print("train  LENGTH!!!!!!!!!!!!!!!!!: ")
             print(len(image_ids))
-
-        """
-        assert subset in ["train", "val", "stage1_train", "stage1_test", "stage2_test"]
-        subset_dir = "stage1_train" if subset in ["train", "val"] else subset
-        dataset_dir = os.path.join(dataset_dir, subset_dir)
-        if subset == "val":
-            image_ids = VAL_IMAGE_IDS
-        else:
-            # Get image ids from directory names
-            image_ids = next(os.walk(dataset_dir))[1]
-            if subset == "train":
-                image_ids = list(set(image_ids) - set(VAL_IMAGE_IDS))
-        """
 
         # Add images
         for image_id in image_ids:
@@ -351,18 +258,18 @@ def train(model, dataset_dir, subset):
     #    tf.config.experimental.set_memory_growth(physical_devices[1], True)
     #config.GPU_COUNT=2
 
-    #model.train(dataset_train, dataset_val,
-    #            learning_rate=config.LEARNING_RATE,
-    #            epochs=30,#20
-    #            #augmentation=augmentation,
-    #            layers='heads')
-
-    print("Train all layers")
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
-                epochs=30,#40
+                epochs=30,#20
                 #augmentation=augmentation,
-                layers='4+')
+                layers='heads')
+
+    print("Train all layers")
+    #model.train(dataset_train, dataset_val,
+    #            learning_rate=config.LEARNING_RATE,
+    #            epochs=30,#40
+    #            #augmentation=augmentation,
+    #            layers='4+')
 
 
 ############################################################
@@ -472,7 +379,8 @@ def detect(model, dataset_dir, subset):
 
     # Read dataset
     dataset = BinSegmentationDataset()
-    dataset.load_BinSegmentation(dataset_dir, subset)
+    dataset.load_BinSegmentation(dataset_dir, 'test')
+    #dataset.load_BinSegmentation(dataset_dir, subset)
     dataset.prepare()
     # Load over images
     submission = []
