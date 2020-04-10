@@ -22,7 +22,7 @@ import keras.backend as K
 import keras.layers as KL
 import keras.engine as KE
 import keras.models as KM
-
+from wandb.keras import WandbCallback
 from mrcnn import utils
 
 # Requires TensorFlow 1.3+ and Keras 2.0.8+.
@@ -2025,7 +2025,7 @@ class MaskRCNN():
     The actual Keras model is in the keras_model property.
     """
 
-    def __init__(self, mode, config, model_dir):
+    def __init__(self, mode, config, model_dir, callbacks):
         """
         mode: Either "training" or "inference"
         config: A Sub-class of the Config class
@@ -2037,6 +2037,7 @@ class MaskRCNN():
         self.model_dir = model_dir
         self.set_log_dir()
         self.keras_model = self.build(mode=mode, config=config)
+        self.callbacks=callbacks
 
     def build(self, mode, config):
         """Build Mask R-CNN architecture.
@@ -2503,7 +2504,7 @@ class MaskRCNN():
             "*epoch*", "{epoch:04d}")
 
     def train(self, train_dataset, val_dataset, learning_rate, epochs, layers,
-              augmentation=None, custom_callbacks=None, no_augmentation_sources=None):
+              augmentation=None, no_augmentation_sources=None):
         """Train the model.
         train_dataset, val_dataset: Training and validation Dataset objects.
         learning_rate: The learning rate to train with
@@ -2570,16 +2571,21 @@ class MaskRCNN():
             os.makedirs(self.log_dir)
 
         # Callbacks
-        callbacks = [
-            keras.callbacks.TensorBoard(log_dir=self.log_dir,
-                                        histogram_freq=0, write_graph=True, write_images=True),
-            keras.callbacks.ModelCheckpoint(self.checkpoint_path,
-                                            verbose=0, save_weights_only=True),
-        ]
+        #callbacks = [
+            #keras.callbacks.TensorBoard(log_dir=self.log_dir,
+            #                            histogram_freq=0, write_graph=True, write_images=False),
+            # WandbCallback(data_type="image", generator=val_generator),
 
+            #keras.callbacks.ModelCheckpoint(self.checkpoint_path,
+            #                                verbose=0, save_weights_only=True, save_best_only=True),
+            #WandbCallback(),
+        #]
+
+        callback=[
+            keras.callbacks.ModelCheckpoint(self.checkpoint_path,verbose=0, save_weights_only=True, save_best_only=True)]
         # Add custom callbacks to the list
-        if custom_callbacks:
-            callbacks += custom_callbacks
+        #if custom_callbacks:
+        #    callbacks += custom_callbacks
 
         # Train
         log("\nStarting at epoch {}. LR={}\n".format(self.epoch, learning_rate))
@@ -2600,7 +2606,7 @@ class MaskRCNN():
             initial_epoch=self.epoch,
             epochs=epochs,
             steps_per_epoch=self.config.STEPS_PER_EPOCH,
-            callbacks=callbacks,
+            callbacks=self.callbacks+callback,
             validation_data=val_generator,
             validation_steps=self.config.VALIDATION_STEPS,
             max_queue_size=100,

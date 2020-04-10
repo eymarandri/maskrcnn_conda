@@ -131,3 +131,5 @@ results/
 logs/
 samples/
 .idea/
+/bin_detector/wandb*
+
