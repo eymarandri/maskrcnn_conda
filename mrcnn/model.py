@@ -23,6 +23,8 @@ import keras.layers as KL
 import keras.engine as KE
 import keras.models as KM
 from wandb.keras import WandbCallback
+import wandb
+
 from mrcnn import utils
 
 # Requires TensorFlow 1.3+ and Keras 2.0.8+.
@@ -2389,6 +2391,10 @@ class MaskRCNN():
             lr=learning_rate, momentum=momentum,
             clipnorm=self.config.GRADIENT_CLIP_NORM)
         # Add Losses
+        #if self.config.OPTIMIZER == 'ADAM':
+        #    optimizer = keras.optimizers.Adam(
+        #        learning_rate, amsgrad=True, clipnorm=self.config.GRADIENT_CLIP_NORM)
+
         # First, clear previously set losses to avoid duplication
         self.keras_model._losses = []
         self.keras_model._per_input_losses = {}
@@ -2582,7 +2588,10 @@ class MaskRCNN():
         #]
 
         callback=[
-            keras.callbacks.ModelCheckpoint(self.checkpoint_path,verbose=0, save_weights_only=True, save_best_only=True)]
+            keras.callbacks.ModelCheckpoint(self.checkpoint_path,verbose=0, save_weights_only=True),
+            WandbCallback(
+            data_type='image', save_model=True)
+        ]
         # Add custom callbacks to the list
         #if custom_callbacks:
         #    callbacks += custom_callbacks
@@ -2613,6 +2622,8 @@ class MaskRCNN():
             workers=workers,
             use_multiprocessing=True,
         )
+        wandb.save("bestrun.h5")
+
         self.epoch = max(self.epoch, epochs)
 
     def mold_inputs(self, images):

@@ -65,7 +65,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 CLASS_NAME="Bin" #or graybox
 # Results directory
 # Save submission files here
-RESULTS_DIR = os.path.join(ROOT_DIR, "results/bindetector_heads/")
+RESULTS_DIR = os.path.join(ROOT_DIR, "results/bindetector_res50/")
 
 VAL_IMAGE_IDS = [
     "5c9404cb-6e81-4e24-8553-24deecc3c793_inst_0_class_Bin_seg_0_orig",
@@ -78,7 +78,7 @@ VAL_IMAGE_IDS = [
 class BinSegmentationConfig(Config):
     """Configuration for training on the BinSegmentation segmentation dataset."""
     # Give the configuration a recognizable name
-    NAME = CLASS_NAME#"graybox"
+    NAME = "Bins_res50"#CLASS_NAME#"graybox"
     GPU_COUNT = 1
     # Adjust depending on your GPU memory
     IMAGES_PER_GPU = 1
@@ -87,9 +87,9 @@ class BinSegmentationConfig(Config):
     NUM_CLASSES = 1 + 1  # Background + BinSegmentation
 
     # Number of training and validation steps per epoch
-    STEPS_PER_EPOCH = 1621
+    STEPS_PER_EPOCH = 1000#(2293)//IMAGES_PER_GPU   #1621
     #STEPS_PER_EPOCH = (657 - len(VAL_IMAGE_IDS)) // IMAGES_PER_GPU
-    VALIDATION_STEPS = max(1, 367 // IMAGES_PER_GPU)
+    VALIDATION_STEPS = 100#max(1, 962 // IMAGES_PER_GPU) #367
 
     # Don't exclude based on confidence. Since we have two classes
     # then 0.5 is the minimum anyway as it picks between BinSegmentation and BG
@@ -97,18 +97,20 @@ class BinSegmentationConfig(Config):
 
     # Backbone network architecture
     # Supported values are: resnet50, resnet101
-    BACKBONE = "resnet101"
-
+    BACKBONE = "resnet50"
+    #TODO: Try  OPTIMIZER = "ADAM", already added to MODEL L:2394
     # Input image resizing
     # Random crops of size 512x512
-    IMAGE_RESIZE_MODE = "crop"
-    IMAGE_MIN_DIM = 512
-    IMAGE_MAX_DIM = 512 #512
+    #IMAGE_RESIZE_MODE = "square"
+    #IMAGE_RESIZE_MODE = "crop"
+    #IMAGE_MIN_DIM = 512
+    #IMAGE_MAX_DIM = 1024 #512
     #IMAGE_MIN_SCALE = 2.0
-
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
     # Length of square anchor side in pixels
-    RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)
-
+    #RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)
+    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
     # ROIs kept after non-maximum supression (training and inference)
     POST_NMS_ROIS_TRAINING = 1000
     POST_NMS_ROIS_INFERENCE = 2000
@@ -119,9 +121,10 @@ class BinSegmentationConfig(Config):
 
     # How many anchors per image to use for RPN training
     #RPN_TRAIN_ANCHORS_PER_IMAGE = 64
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 256
 
     # Image mean (RGB)
-    #MEAN_PIXEL = np.array([43.53, 39.56, 48.22])
+    MEAN_PIXEL = np.array([99.22, 98.74, 97.40])
 
     # If enabled, resizes instance masks to a smaller size to reduce
     # memory load. Recommended when using high-resolution images.
@@ -136,8 +139,8 @@ class BinSegmentationConfig(Config):
     TRAIN_ROIS_PER_IMAGE = 128
 
     # Maximum number of ground truth instances to use in one image
-    MAX_GT_INSTANCES = 200
-
+    MAX_GT_INSTANCES = 100
+    DEVICE = "/gpu:1"
     # Max number of final detections per image
     DETECTION_MAX_INSTANCES = 100
 
@@ -247,14 +250,10 @@ class BinSegmentationDataset(utils.Dataset):
 
 #WANDB --------------------------
 #run = wandb.init()
-run= wandb.init(project="mrcnn")
-config = BinSegmentationConfig()
-#wandb.config.update(args)
-config_dict = config.get_config_dict()
-configs_of_interest = ['BACKBONE', 'GRADIENT_CLIP_NORM', 'LEARNING_MOMENTUM', 'LEARNING_RATE',
-                        'WEIGHT_DECAY', 'STEPS_PER_EPOCH']
 
-run.history.row.update({k: config_dict[k] for k in configs_of_interest})
+
+#wandb.config.update(args)
+
 
 def fig_to_array(fig):
     fig.canvas.draw()
@@ -269,9 +268,10 @@ class ImageCallback(keras.callbacks.Callback):
         self.run = run
         self.dataset_val = dataset_val
         self.dataset_train = dataset_train
-        self.image_ids = dataset_val.image_ids[:3]
+        self.image_ids = dataset_val.image_ids[4:10]
 
     def label_image(self, image_id):
+        #plt.cla
         original_image, image_meta, gt_class_id, gt_bbox, gt_mask = load_image_gt(
             self.dataset_val, config, image_id, use_mini_mask=False)
         _, ax = plt.subplots(figsize=(16, 16))
@@ -292,7 +292,7 @@ class ImageCallback(keras.callbacks.Callback):
         labeled_images = [self.label_image(i) for i in self.image_ids]
         self.run.history.row["img_segmentations"] = [
             wandb.Image(
-                skimage.transform.resize(img, (512,512)), # Skip resizing
+                skimage.transform.resize(img, (256,256)),
                 caption="Caption",
                 mode='RGBA') for img in labeled_images]
 
@@ -632,9 +632,23 @@ if __name__ == '__main__':
                         metavar="Class names",
                         help='Class names, str')
     args = parser.parse_args()
+    if args.weights.lower() == "last":
+        run=wandb.init(project="mrcnn", resume=True)
+    else:
+        run = wandb.init(project="mrcnn")
+
+    config = BinSegmentationConfig()
     wandb.config.update(args)
+    config_dict = config.get_config_dict()
+    configs_of_interest = ['BACKBONE', 'GRADIENT_CLIP_NORM', 'LEARNING_MOMENTUM', 'LEARNING_RATE',
+                           'WEIGHT_DECAY', 'STEPS_PER_EPOCH']
+    # wandb_callb=WandbCallback(save_model=True)
+    run.history.row.update({k: config_dict[k] for k in configs_of_interest})
+
+
     print("CLASS NAME!:",args.classname)
     CLASS_NAME=args.classname
+
 
     # Validate arguments
     if args.command == "train":
@@ -652,7 +666,6 @@ if __name__ == '__main__':
     if args.subset:
         print("Subset: ", args.subset)
     print("Logs: ", args.logs)
-
 
     # Configurations
     if args.command == "train":
@@ -686,7 +699,7 @@ if __name__ == '__main__':
 
     else:
         model = modellib.MaskRCNN(mode="inference", config=config,
-                                  model_dir=args.logs)
+                                  model_dir=args.logs, callbacks=None)
 
 
     # Select weights file to load
@@ -728,9 +741,9 @@ if __name__ == '__main__':
         print("Train all layers")
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
-                    epochs=40,  # 40
+                    epochs=50,  # 40
                     # augmentation=augmentation,
-                    layers='4+')
+                    layers='all')
 
     elif args.command == "detect":
         detect(model, args.dataset, args.subset)
